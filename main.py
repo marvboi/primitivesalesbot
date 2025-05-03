@@ -48,13 +48,39 @@ def save_processed_sales(processed_sales):
 
 def get_eth_price():
     """Get the current price of ETH in USD."""
-    try:
-        response = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
-        data = response.json()
-        return data["ethereum"]["usd"]
-    except Exception as e:
-        print(f"Error fetching ETH price: {e}")
-        return None
+    # Try multiple price APIs for redundancy
+    apis = [
+        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+        "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD"
+    ]
+    
+    for api_url in apis:
+        try:
+            print(f"Trying to fetch ETH price from {api_url}")
+            response = requests.get(api_url, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Handle different API response formats
+                if "ethereum" in data:
+                    price = data["ethereum"]["usd"]
+                elif "USD" in data:
+                    price = data["USD"]
+                else:
+                    continue
+                    
+                print(f"Successfully fetched ETH price: ${price}")
+                return price
+        except Exception as e:
+            print(f"Error fetching ETH price from {api_url}: {e}")
+            continue
+    
+    # If all APIs fail, use a fallback price
+    # This prevents showing $??? in tweets
+    fallback_price = 1825.00  # Set a reasonable fallback price
+    print(f"Using fallback ETH price: ${fallback_price}")
+    return fallback_price
 
 def fetch_recent_sales(include_bids=True, max_age_days=365):
     """Fetch recent sales from Reservoir API for the specified contract.
@@ -588,12 +614,13 @@ def test_post_last_sale():
 def main():
     """Main function to run the sales bot."""
     print("Starting NFT Sales Bot...")
+    print(f"Will check for new sales every {CHECK_INTERVAL} seconds")
     
     # Schedule regular checks for new sales
     schedule.every(CHECK_INTERVAL).seconds.do(process_new_sales)
     
-    # Run once immediately
-    process_new_sales()
+    # Don't run immediately - wait for the first scheduled interval
+    # This prevents posting the last sale when the bot first starts
     
     # Keep the script running
     while True:
