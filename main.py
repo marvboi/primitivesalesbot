@@ -444,7 +444,7 @@ def format_sale_message(sale):
             usd_formatted = "$???"
         
         # Determine collection name for the message
-        nft_collection = collection_name if collection_name else "Primitives"
+        nft_collection = collection_name if collection_name else "Primitive"
         
         # Determine action verb based on whether it's a bid/offer acceptance
         action_verb = "offer accepted for" if sale.get("orderSide") == "bid" else "bought for"
