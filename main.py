@@ -24,7 +24,8 @@ TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
 # Configure how often to check for new sales (in seconds)
-CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 120))
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 120))  # Cooldown after posting a sale
+REGULAR_CHECK_INTERVAL = 300  # Regular check interval (5 minutes)
 
 # Setup storage for keeping track of processed sales
 DATA_DIR = Path("data")
@@ -618,21 +619,22 @@ def test_post_last_sale():
 def main():
     """Main function to run the sales bot."""
     print("Starting NFT Sales Bot...")
-    print("Checking for new sales continuously without cooldown until a sale is found and posted")
+    print(f"Checking for new sales every {REGULAR_CHECK_INTERVAL} seconds (5 minutes)")
+    print(f"After posting a sale, will cool down for {CHECK_INTERVAL} seconds (2 minutes)")
     
     while True:
-        # Check for new sales immediately
+        # Check for new sales
         print(f"\nChecking for new sales at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         sales_found = process_new_sales()
         
-        # Only cool down if sales were found and posted
+        # If sales were found and posted, cool down for a shorter time
         if sales_found > 0:
             print(f"Sales were posted! Cooling down for {CHECK_INTERVAL} seconds before next check...")
             time.sleep(CHECK_INTERVAL)
         else:
-            # No sales found, continue checking immediately
-            # Add a very small delay to prevent excessive API calls
-            time.sleep(1)
+            # No sales found, wait for the regular check interval
+            print(f"No sales found. Next check in {REGULAR_CHECK_INTERVAL} seconds...")
+            time.sleep(REGULAR_CHECK_INTERVAL)
 
 if __name__ == "__main__":
     # If TEST argument is provided, run the test function
