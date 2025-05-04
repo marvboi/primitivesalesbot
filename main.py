@@ -618,17 +618,21 @@ def test_post_last_sale():
 def main():
     """Main function to run the sales bot."""
     print("Starting NFT Sales Bot...")
-    print(f"Checking for new sales continuously with {CHECK_INTERVAL} seconds cooldown after each check")
+    print("Checking for new sales continuously without cooldown until a sale is found and posted")
     
-    # Instead of using schedule, we'll implement a continuous checking loop with cooldown
     while True:
         # Check for new sales immediately
         print(f"\nChecking for new sales at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         sales_found = process_new_sales()
         
-        # If sales were found and posted, or if no sales were found, cool down
-        print(f"Cooling down for {CHECK_INTERVAL} seconds before next check...")
-        time.sleep(CHECK_INTERVAL)
+        # Only cool down if sales were found and posted
+        if sales_found > 0:
+            print(f"Sales were posted! Cooling down for {CHECK_INTERVAL} seconds before next check...")
+            time.sleep(CHECK_INTERVAL)
+        else:
+            # No sales found, continue checking immediately
+            # Add a very small delay to prevent excessive API calls
+            time.sleep(1)
 
 if __name__ == "__main__":
     # If TEST argument is provided, run the test function
