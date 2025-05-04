@@ -487,9 +487,11 @@ def format_sale_message(sale):
         return None
 
 def process_new_sales():
-    """Check for new sales and process them."""
-    print(f"Checking for new sales at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    """Check for new sales and process them.
     
+    Returns:
+        int: Number of sales processed in this check
+    """
     # Load list of already processed sales
     processed_sales = load_processed_sales()
     
@@ -497,8 +499,8 @@ def process_new_sales():
     recent_sales = fetch_recent_sales(include_bids=True)
     
     if not recent_sales:
-        print("No sales found in this check. Will try again next interval.")
-        return
+        print("No sales found in this check. Will try again after cooldown.")
+        return 0
     
     # Process new sales
     sales_processed = 0
@@ -537,8 +539,10 @@ def process_new_sales():
             processed_sales.append(sale_id)
             save_processed_sales(processed_sales)
             sales_processed += 1
+            print(f"Successfully posted sale {sale_id} to Twitter!")
     
     print(f"Processed {sales_processed} new sales in this check")
+    return sales_processed
 
 def test_post_last_sale():
     """Test function to fetch and post the last sale, regardless of how long ago it happened."""
@@ -614,19 +618,17 @@ def test_post_last_sale():
 def main():
     """Main function to run the sales bot."""
     print("Starting NFT Sales Bot...")
-    print(f"Will check for new sales every {CHECK_INTERVAL} seconds")
+    print(f"Checking for new sales continuously with {CHECK_INTERVAL} seconds cooldown after each check")
     
-    # Schedule regular checks for new sales
-    schedule.every(CHECK_INTERVAL).seconds.do(process_new_sales)
-    
-    # Run immediately to check for any recent sales
-    print("Checking for sales immediately on startup...")
-    process_new_sales()
-    
-    # Keep the script running
+    # Instead of using schedule, we'll implement a continuous checking loop with cooldown
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        # Check for new sales immediately
+        print(f"\nChecking for new sales at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        sales_found = process_new_sales()
+        
+        # If sales were found and posted, or if no sales were found, cool down
+        print(f"Cooling down for {CHECK_INTERVAL} seconds before next check...")
+        time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
     # If TEST argument is provided, run the test function
