@@ -82,7 +82,7 @@ def get_eth_price():
     print(f"Using fallback ETH price: ${fallback_price}")
     return fallback_price
 
-def fetch_recent_sales(include_bids=True, max_age_days=365):
+def fetch_recent_sales(include_bids=True, max_age_days=7):
     """Fetch recent sales from Reservoir API for the specified contract.
     
     Args:
@@ -619,8 +619,9 @@ def main():
     # Schedule regular checks for new sales
     schedule.every(CHECK_INTERVAL).seconds.do(process_new_sales)
     
-    # Don't run immediately - wait for the first scheduled interval
-    # This prevents posting the last sale when the bot first starts
+    # Run immediately to check for any recent sales
+    print("Checking for sales immediately on startup...")
+    process_new_sales()
     
     # Keep the script running
     while True:
